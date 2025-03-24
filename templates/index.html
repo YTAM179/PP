@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Game Price Comparator</title>
+    
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* General Styling */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Header Styling */
+        header {
+            background-color: #007BFF;
+            padding: 15px;
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        /* Main Container */
+        .container {
+            width: 50%;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 30px;
+        }
+
+        h1 {
+            color: #007BFF;
+            font-size: 28px;
+        }
+
+        /* Input Field */
+        input {
+            width: 80%;
+            height: 45px;
+            font-size: 18px;
+            padding: 10px;
+            border: 2px solid #007BFF;
+            border-radius: 25px;
+            outline: none;
+        }
+
+        /* Button Styling */
+        .button {
+            width: 150px;
+            height: 50px;
+            font-size: 18px;
+            border-radius: 25px;
+            background: linear-gradient(90deg, #007BFF, #00D4FF);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+
+        .button:hover {
+            background: linear-gradient(90deg, #0056b3, #008CBA);
+        }
+
+        /* Footer Styling */
+        footer {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #007BFF;
+            color: white;
+            font-size: 14px;
+        }
+
+        /* Game Image Styling */
+        .game-image {
+            width: 300px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>Video Game Price Comparator</header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <h1>Search for a Game</h1>
+        <form method="POST">
+            <input type="text" name="game_name" placeholder="Enter game name" required>
+            <br><br>
+            <button class="button">Search</button>
+        </form>
+    </div>
+
+    <!-- Display Results -->
+    {% if price %}
+        <h2 style="color:#007BFF;">Price for "{{ game_name }}"</h2>
+        <p style="color:MediumSeaGreen;">{{ price }}</p>
+
+        {% if image_url %}
+            <br>
+            <img src="{{ image_url }}" alt="Game Image" class="game-image">
+            <br>
+        {% endif %}
+
+    {% elif price is not none %}
+        <h2 style="color:#007BFF;">Game not found</h2>
+    {% endif %}
+
+    {% if game_info %}
+        <h3 style="color:#007BFF;">Game Info</h3>
+        <p style="color:MediumSeaGreen;">{{ game_info }}</p>
+    {% endif %}
+
+</body>
+</html>
