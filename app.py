@@ -127,6 +127,20 @@ def get_game_prices_concurrently(game_name):
     game_results = get_steam_game_price(game_name)
     return game_results
 
+def _capitalize(string: str) -> str:
+    string = string.split(" ")
+    new_string: str = ""
+
+    for index, word in enumerate(string):
+        if word not in ["the", "in"] and index != 0:
+            new_string += " " + word.capitalize();
+        elif index != 0:
+            new_string += " " + word
+        else:
+            new_string += word if word not in ["the", "in"] else word.capitalize();
+    
+    return new_string
+
 def get_game_suggestions(query):
     """Get game suggestions based on query input."""
     search_url = "https://api.steampowered.com/ISteamApps/GetAppList/v2/"
@@ -154,7 +168,7 @@ def index():
 
 @app.route("/search")
 def search_game():
-    game_name = request.args.get('game_name')
+    game_name = _capitalize(request.args.get('game_name'))
     game_results = get_game_prices_concurrently(game_name)
 
     # Return a JSON response for AJAX requests

@@ -103,17 +103,43 @@
         }
 
         .game-info {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+            max-width: 250px; /* Adjust this as necessary for your design */
+            margin: 0 auto;   /* Centers the container horizontally */
+            padding: 15px;    /* Adds space inside the container */
+            background-color: #fff; /* Optional: adds a background color */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional: adds shadow for a better look */
+            border-radius: 8px; /* Optional: adds rounded corners */
             transition: transform 0.3s ease;
         }
 
-        .game-info:hover {
-            transform: translateY(-5px);
+        .game_info:hover {
+            transform: translateY(-10px);
         }
+
+        .game-info h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .game-info .game-image {
+            max-width: 100%; /* Makes sure the image is responsive */
+            height: auto; /* Maintains aspect ratio of the image */
+            margin-bottom: 15px;
+        }
+
+        .game-info p {
+            margin: 5px 0;
+        }
+
+        .game-info a {
+            color: #007bff; /* Custom color for the link */
+            text-decoration: none;
+        }
+
+        .game-info a:hover {
+            text-decoration: underline;
+        }
+
 
         .game-image {
             width: 200px;
@@ -134,6 +160,8 @@
         .game-info p {
             font-size: 16px;
         }
+
+        
 
         a {
             color: #007BFF;
@@ -271,7 +299,8 @@
         document.getElementById('game-search-form').addEventListener('submit', function(event) {
             event.preventDefault(); // Prevent page reload on form submit
             const gameName = document.getElementById('game-name').value;
-            
+            const resultsContainer = document.getElementById('results');
+
             // Show the loading spinner
             document.getElementById('loading-spinner').classList.add('active');
 
@@ -280,10 +309,6 @@
                 .then(data => {
                     // Hide the loading spinner
                     document.getElementById('loading-spinner').classList.remove('active');
-
-                    // Handle and display the results dynamically
-                    const resultsContainer = document.getElementById('results');
-                    resultsContainer.innerHTML = '';
 
                     if (data.length > 0) {
                         data.forEach(result => {
