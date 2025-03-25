@@ -1,115 +1,175 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 import requests
-import concurrent.futures
 import time
 
-# Caching to store API results for a short time (e.g., 5 minutes)
+# Caching to store API results for a short time (e.g., 1 hour)
 cache = {}
+CACHE_DURATION = 3600  # Cache duration (1 hour)
+STEAM_API_KEY = "99883BDAA0AF7A49009D3D88C386AAE4"
 
-# Fetch Steam game price
-def get_steam_game_price(game_name):
-    # Check cache first
-    if game_name in cache and time.time() - cache[game_name]["timestamp"] < 300:
-        print("Returning cached Steam data.")
-        return cache[game_name]["steam"]
-    
-    steam_url = "https://api.steampowered.com/ISteamApps/GetAppList/v2/"
-    response = requests.get(steam_url).json()
+# Example of static featured games
+FEATURED_GAMES = [
+    {
+        "name": "Satisfactory",
+        "price": "$40.87",
+        "image": "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/526870/header.jpg?t=1737364583",
+        "game_url": "https://store.steampowered.com/app/526870/Satisfactory/"
+    },
+    {
+        "name": "Persona 3 Reload",
+        "price": "$76.05",
+        "image": "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2161700/header.jpg?t=1741697885",
+        "game_url": "https://store.steampowered.com/app/2161700/Persona_3_Reload/"
+    },
+    {
+        "name": "Call of Duty®: Black Ops 6",
+        "price": "$86.95",
+        "image": "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/2933620/header.jpg?t=1740790590",
+        "game_url": "https://store.steampowered.com/app/2933620/Call_of_Duty_Black_Ops_6/"
+    }
+]
 
-    app_list = response.get("applist", {}).get("apps", [])
-    game_id = None
+# Fetch Steam game price using Steam API key
+def get_cached_game_data(game_name):
+    """Retrieve game data from cache if it's not expired."""
+    if game_name in cache:
+        cache_entry = cache[game_name]
+        if time.time() - cache_entry['timestamp'] < CACHE_DURATION:
+            print(f"Using cached data for {game_name}")
+            return cache_entry['data']
+    return None
 
-    for game in app_list:
-        if game_name.lower() in game["name"].lower():
-            game_id = game["appid"]
-            break
-
-    if not game_id:
-        print("Steam game not found")
-        return None, None, None
-
-    store_url = f"https://store.steampowered.com/api/appdetails?appids={game_id}"
-    game_data = requests.get(store_url).json()
-
-    if str(game_id) in game_data and game_data[str(game_id)]["success"]:
-        data = game_data[str(game_id)]["data"]
-        price = data.get("price_overview", {}).get("final_formatted", "Price not available")
-        image = data.get("header_image", "")
-        game_url = f"https://store.steampowered.com/app/{game_id}"
-
-        # Cache the result
+# Store data in cache
+def cache_game_data(game_name, data):
+    if data:  # Only cache if we have valid results
         cache[game_name] = {
-            "steam": (price, image, game_url),
-            "timestamp": time.time()
+            'data': data,
+            'timestamp': time.time()
         }
 
-        print("Steam Data:", price, game_url, image)
-        return price, image, game_url
+def get_steam_game_price(game_name):
+    """Fetch game price from Steam API, with caching and rate-limiting."""
+    cached_data = get_cached_game_data(game_name)
+    if cached_data:
+        return cached_data
 
-    print("Steam price not found")
-    return None, None, None
+    try:
+        print(f"Searching for game: {game_name}")
 
-# Fetch Epic Games price using Store Catalog API
-def get_epic_game_price(game_name):
-    epic_url = "https://store-site-backend-static.ak.epicgames.com/store/api/content/products"
-    response = requests.get(epic_url).json()
+        # Ensure we respect rate limits
+        time.sleep(1)  # Small delay to avoid hitting rate limits
 
-    print("Epic API Response:", response)
-    games = response.get("elements", [])
+        # Fetch all Steam apps
+        search_url = "https://api.steampowered.com/ISteamApps/GetAppList/v2/"
+        response = requests.get(search_url)
+        response.raise_for_status()
+        data = response.json()
 
-    if not games:
-        print("Epic API returned no games.")
-        return None, None, None  # Avoid KeyError
+        app_list = data.get("applist", {}).get("apps", [])
 
-    for game in games:
-        print("Checking game:", game.get("title"))  # Debug: Print each game name
-        if game_name.lower() in game.get("title", "").lower():
-            price_info = game.get("price", {}).get("totalPrice", {}).get("fmtPrice", {}).get("originalPrice", "Price not available")
-            image = game.get("keyImages", [{}])[0].get("url", "")
-            game_url = f"https://store.epicgames.com/p/{game.get('productSlug', '')}"
+        # Prioritize exact matches, then fallback to partial matches
+        exact_matches = [game for game in app_list if game["name"].lower() == game_name.lower()]
+        partial_matches = [game for game in app_list if game_name.lower() in game["name"].lower()]
 
-            print("Epic Data Found:", price_info, game_url, image)  # Debug: Confirm found data
-
-            return price_info, image, game_url
-
-    print("Epic game not found")
-    return None, None, None
-
-# Fetch both Steam and Epic data concurrently
-def get_game_prices_concurrently(game_name):
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        # Call both functions concurrently
-        future_steam = executor.submit(get_steam_game_price, game_name)
-        future_epic = executor.submit(get_epic_game_price, game_name)
-
-        # Measure the time taken by each request
-        start_time_steam = time.time()
-        price_steam, image_steam, game_url_steam = future_steam.result()
-        print(f"Steam API call took {time.time() - start_time_steam} seconds.")
+        # Debugging the results of exact and partial matches
+        print(f"Exact matches for '{game_name}': {[game['name'] for game in exact_matches]}")
+        print(f"Partial matches for '{game_name}': {[game['name'] for game in partial_matches]}")
         
-        start_time_epic = time.time()
-        price_epic, image_epic, game_url_epic = future_epic.result()
-        print(f"Epic API call took {time.time() - start_time_epic} seconds.")
-    
-    return price_steam, image_steam, game_url_steam, price_epic, image_epic, game_url_epic
+        matches = exact_matches if exact_matches else partial_matches
 
+        # Exclude the specific game (Balatro Soundtrack) by App ID
+        matches = [game for game in matches if game["appid"] != 2834460]
+
+        print(f"Found {len(matches)} matches for {game_name} after exclusion.")
+        for match in matches:
+            print(f"Match: {match['name']} (App ID: {match['appid']})")
+
+        if not matches:
+            print(f"Game {game_name} not found.")
+            return None
+
+        results = []
+        for game in matches:
+            game_id = game["appid"]
+            store_url = f"https://store.steampowered.com/api/appdetails?appids={game_id}&key={STEAM_API_KEY}"
+            game_data = requests.get(store_url)
+            game_data.raise_for_status()
+            game_data = game_data.json()
+
+            if str(game_id) in game_data and game_data[str(game_id)]["success"]:
+                data = game_data[str(game_id)]["data"]
+
+                # Process price and other data
+                original_price = data.get("price_overview", {}).get("initial_formatted", "Price not available")
+                sale_price = data.get("price_overview", {}).get("final_formatted", original_price)
+
+                image = data.get("header_image", "")
+                game_url = f"https://store.steampowered.com/app/{game_id}"
+
+                results.append({
+                    "price": sale_price,
+                    "original_price": original_price if sale_price != original_price else None,
+                    "image": image,
+                    "game_url": game_url,
+                    "name": game["name"]
+                })
+
+        # Cache the results only if valid
+        cache_game_data(game_name, results)
+        return results
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching Steam data: {e}")
+        return None
+
+# Fetch Steam data only
+def get_game_prices_concurrently(game_name):
+    game_results = get_steam_game_price(game_name)
+    return game_results
+
+def get_game_suggestions(query):
+    """Get game suggestions based on query input."""
+    search_url = "https://api.steampowered.com/ISteamApps/GetAppList/v2/"
+    response = requests.get(search_url)
+    response.raise_for_status()
+    data = response.json()
+    app_list = data.get("applist", {}).get("apps", [])
+    
+    # Return matching games based on the query
+    suggestions = [game["name"] for game in app_list if query.lower() in game["name"].lower()]
+    return suggestions[:5]  # Limit to 5 suggestions
+
+# Initialize Flask app
 app = Flask(__name__)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    price_steam, image_steam, game_url_steam = None, None, None
-    price_epic, image_epic, game_url_epic = None, None, None
-    
+    # Serve the homepage with the form and no search results by default
     if request.method == "POST":
         game_name = request.form.get("game_name")
-        price_steam, image_steam, game_url_steam, price_epic, image_epic, game_url_epic = get_game_prices_concurrently(game_name)
-        
-        print("Sending to HTML:", price_steam, image_steam, game_url_steam, price_epic, image_epic, game_url_epic)
-    
-    return render_template("index.html", game_name=request.form.get("game_name"),
-                           price_steam=price_steam, image_steam=image_steam, game_url_steam=game_url_steam,
-                           price_epic=price_epic, image_epic=image_epic, game_url_epic=game_url_epic)
+        game_results = get_game_prices_concurrently(game_name)
+        return render_template("index.html", game_name=game_name, game_results=game_results, featured_games=FEATURED_GAMES)
+
+    return render_template("index.html", featured_games=FEATURED_GAMES)
+
+@app.route("/search")
+def search_game():
+    game_name = request.args.get('game_name')
+    game_results = get_game_prices_concurrently(game_name)
+
+    # Return a JSON response for AJAX requests
+    return jsonify(game_results)
+
+@app.route("/featured")
+def featured_games():
+    # Return featured games as a JSON response for the front-end
+    return jsonify(FEATURED_GAMES)
+
+@app.route("/suggestions")
+def suggestions():
+    query = request.args.get("query")
+    suggestions = get_game_suggestions(query)
+    return jsonify(suggestions)
 
 if __name__ == "__main__":
-    # Run the app in production mode to improve performance (disable debug)
-    app.run(debug=False)
+    app.run(debug=True)
