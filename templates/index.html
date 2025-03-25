@@ -5,11 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Video Game Price Comparator</title>
     
-    <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     
     <style>
-        /* General Styling */
         body {
             font-family: 'Poppins', sans-serif;
             background-color: #f4f4f4;
@@ -18,8 +16,7 @@
             margin: 0;
             padding: 0;
         }
-
-        /* Header Styling */
+        
         header {
             background-color: #007BFF;
             padding: 15px;
@@ -28,7 +25,6 @@
             font-weight: 600;
         }
 
-        /* Main Container */
         .container {
             width: 50%;
             margin: auto;
@@ -44,7 +40,6 @@
             font-size: 28px;
         }
 
-        /* Input Field */
         input {
             width: 80%;
             height: 45px;
@@ -55,7 +50,6 @@
             outline: none;
         }
 
-        /* Button Styling */
         .button {
             width: 150px;
             height: 50px;
@@ -73,7 +67,6 @@
             background: linear-gradient(90deg, #0056b3, #008CBA);
         }
 
-        /* Footer Styling */
         footer {
             margin-top: 30px;
             padding: 15px;
@@ -82,21 +75,25 @@
             font-size: 14px;
         }
 
-        /* Game Image Styling */
+        .game-container {
+            margin-top: 20px;
+        }
+
+        .game-info {
+            margin-top: 10px;
+        }
+
         .game-image {
-            width: 300px;
+            width: 200px;
             border-radius: 10px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
             margin-top: 10px;
         }
     </style>
 </head>
 <body>
 
-    <!-- Header -->
     <header>Video Game Price Comparator</header>
 
-    <!-- Main Content -->
     <div class="container">
         <h1>Search for a Game</h1>
         <form method="POST">
@@ -106,25 +103,38 @@
         </form>
     </div>
 
-    <!-- Display Results -->
-    {% if price %}
-        <h2 style="color:#007BFF;">Price for "{{ game_name }}"</h2>
-        <p style="color:MediumSeaGreen;">{{ price }}</p>
+    {% if game_name %}
+        <div class="game-container">
+            <h2 style="color:#007BFF;">Results for "{{ game_name }}"</h2>
 
-        {% if image_url %}
-            <br>
-            <img src="{{ image_url }}" alt="Game Image" class="game-image">
-            <br>
-        {% endif %}
+            {% if price_steam %}
+                <div class="game-info">
+                    <h3>Steam</h3>
+                    {% if image_steam %}
+                        <img src="{{ image_steam }}" class="game-image" alt="Game Image">
+                    {% endif %}
+                    <p><strong>Price:</strong> {{ price_steam }}</p>
+                    <p><a href="{{ game_url_steam }}" target="_blank">View on Steam</a></p>
+                </div>
+            {% endif %}
 
-    {% elif price is not none %}
-        <h2 style="color:#007BFF;">Game not found</h2>
-    {% endif %}
+            {% if price_epic %}
+                <div class="game-info">
+                    <h3>Epic Games Store</h3>
+                    {% if image_epic %}
+                        <img src="{{ image_epic }}" class="game-image" alt="Game Image">
+                    {% endif %}
+                    <p><strong>Price:</strong> {{ price_epic }}</p>
+                    <p><a href="{{ game_url_epic }}" target="_blank">View on Epic Games Store</a></p>
+                </div>
+            {% endif %}
 
-    {% if game_info %}
-        <h3 style="color:#007BFF;">Game Info</h3>
-        <p style="color:MediumSeaGreen;">{{ game_info }}</p>
+            {% if not price_steam and not price_epic %}
+                <p style="color: red;">Game not found on Steam or Epic Games Store.</p>
+            {% endif %}
+        </div>
     {% endif %}
 
 </body>
 </html>
+
