@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Video Game Price Comparator</title>
-    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-    
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -98,48 +96,18 @@
             font-size: 14px;
         }
 
-        .game-container {
-            margin-top: 40px;
-        }
-
         .game-info {
-            max-width: 250px; /* Adjust this as necessary for your design */
-            margin: 0 auto;   /* Centers the container horizontally */
-            padding: 15px;    /* Adds space inside the container */
-            background-color: #fff; /* Optional: adds a background color */
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional: adds shadow for a better look */
-            border-radius: 8px; /* Optional: adds rounded corners */
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s ease;
         }
 
-        .game_info:hover {
-            transform: translateY(-10px);
+        .game-info:hover {
+            transform: translateY(-5px);
         }
-
-        .game-info h3 {
-            font-size: 1.5em;
-            margin-bottom: 10px;
-        }
-
-        .game-info .game-image {
-            max-width: 100%; /* Makes sure the image is responsive */
-            height: auto; /* Maintains aspect ratio of the image */
-            margin-bottom: 15px;
-        }
-
-        .game-info p {
-            margin: 5px 0;
-        }
-
-        .game-info a {
-            color: #007bff; /* Custom color for the link */
-            text-decoration: none;
-        }
-
-        .game-info a:hover {
-            text-decoration: underline;
-        }
-
 
         .game-image {
             width: 200px;
@@ -160,8 +128,6 @@
         .game-info p {
             font-size: 16px;
         }
-
-        
 
         a {
             color: #007BFF;
@@ -184,6 +150,17 @@
             display: block;
         }
 
+        .discount-price {
+            font-size: 18px;
+            color: #ff4d4d;
+            font-weight: bold;
+        }
+
+        .original-price {
+            text-decoration: line-through;
+            color: #999;
+        }
+
         .featured-games {
             margin: 40px 0;
             text-align: center;
@@ -193,7 +170,7 @@
             display: flex; /* Flexbox for horizontal alignment */
             justify-content: space-evenly; /* Evenly distribute the cards */
             gap: 20px; /* Space between the cards */
-            flex-wrap: nowrap; /* Ensure no wrapping */
+            flex-wrap: wrap; /* Ensure wrapping for responsiveness */
             margin-top: 20px;
         }
 
@@ -237,26 +214,12 @@
         .game-card a:hover {
             text-decoration: underline;
         }
-
-        @media (max-width: 768px) {
-            .game-cards {
-                flex-direction: column; /* Stack the cards vertically on smaller screens */
-                align-items: center; /* Center align the cards */
-            }
-
-            .game-card {
-                width: 100%; /* Make cards take full width on smaller screens */
-                max-width: 350px; /* Limit max width of the cards */
-                margin-bottom: 20px;
-            }
-        }
     </style>
 </head>
 <body>
 
     <header>Search for the best prices!</header>
 
-    <!-- Hero Section -->
     <section class="hero">
         <h2>Find the best prices on your favorite video games!</h2>
         <p>Search for games, compare prices, and discover discounts across multiple platforms.</p>
@@ -269,63 +232,61 @@
             <button class="button" type="submit">Search</button>
         </form>
 
-        <!-- Loading Spinner -->
         <div class="loading-spinner" id="loading-spinner">Searching...</div>
     </div>
 
-<!-- Featured Games Section -->
-<section class="featured-games">
-    <h2>Featured Games</h2>
-    <div class="game-cards">
-        {% for game in featured_games %}
-        <div class="game-card">
-            <img src="{{ game.image }}" alt="{{ game.name }}">
-            <h3>{{ game.name }}</h3>
-            <p>{{ game.price }}</p>
-            <a href="{{ game.game_url }}" target="_blank">View Game</a>
+    <!-- Featured Games Section -->
+    <section class="featured-games">
+        <h2>Featured Games</h2>
+        <div class="game-cards">
+            {% for game in featured_games %}
+            <div class="game-card">
+                <img src="{{ game.image }}" alt="{{ game.name }}">
+                <h3>{{ game.name }}</h3>
+                <p>{{ game.price }}</p>
+                <a href="{{ game.game_url }}" target="_blank">View Game</a>
+            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
-</section>
+    </section>
 
     <div id="results"></div>
 
     <footer>
-        <p>Search the website and find the best deals on the games you are looking for! </p>
+        <p>Search the website and find the best deals on the games you are looking for!</p>
     </footer>
 
     <script>
-        // AJAX Request to fetch data without refreshing
         document.getElementById('game-search-form').addEventListener('submit', function(event) {
-            event.preventDefault(); // Prevent page reload on form submit
+            event.preventDefault();
             const gameName = document.getElementById('game-name').value;
-            const resultsContainer = document.getElementById('results');
-
-            // Show the loading spinner
             document.getElementById('loading-spinner').classList.add('active');
 
             fetch(`/search?game_name=${gameName}`)
                 .then(response => response.json())
                 .then(data => {
-                    // Hide the loading spinner
                     document.getElementById('loading-spinner').classList.remove('active');
+                    const resultsContainer = document.getElementById('results');
+                    resultsContainer.innerHTML = '';
 
                     if (data.length > 0) {
                         data.forEach(result => {
+                            const originalPrice = result.original_price ? `<span class="original-price">${result.original_price}</span>` : '';
+                            const salePrice = `<span class="discount-price">${result.price}</span>`;
+
                             resultsContainer.innerHTML += `
                                 <div class="game-info">
                                     <h3>${result.name}</h3>
-                                    ${result.image ? `<img src="${result.image}" class="game-image" alt="Game Image">` : ''}
-                                    <p><strong>Price:</strong> ${result.original_price ? `<span style="text-decoration: line-through;">${result.original_price}</span> ` : ''}${result.price}</p>
-                                    <p><a href="${result.game_url}" target="_blank">View on Steam</a></p>
+                                    ${result.image ? `<img src="${result.image}" class="game-image">` : '<p>No Image Available</p>'}
+                                    <p><strong>Price:</strong> ${originalPrice} ${salePrice}</p>
+                                    <p><a href="${result.game_url}" target="_blank">View on ${result.platform}</a></p>
                                 </div>`;
                         });
                     } else {
-                        resultsContainer.innerHTML += `<p style="color: red;">No results found on Steam.</p>`;
+                        resultsContainer.innerHTML = '<p style="color: red;">No results found.</p>';
                     }
                 })
-                .catch(error => {
-                    // Hide the loading spinner
+                .catch(() => {
                     document.getElementById('loading-spinner').classList.remove('active');
                     alert('An error occurred while fetching the data.');
                 });
