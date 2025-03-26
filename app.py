@@ -5,7 +5,7 @@ import time
 # Caching to store API results for a short time (1 hour)
 cache = {}
 CACHE_DURATION = 3600  # Cache duration (1 hour)
-STEAM_API_KEY = "99883BDAA0AF7A49009D3D88C386AAE4"
+STEAM_API_KEY = "api key"
 
 # Featured games
 FEATURED_GAMES = [
